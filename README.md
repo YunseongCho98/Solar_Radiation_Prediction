@@ -108,24 +108,58 @@ Train.csv / Test.csv
 09_submit.py         SampleSubmission 형식으로 submission4.csv 생성
 ```
 
+> **06_cv.py**: CV로 day_bias를 추정하는 선택적 스크립트.
+> 단, 홀수월 CV bias와 짝수월 test bias 간 분포 차이로 인해
+> 적용 시 리더보드 점수가 하락하는 경향이 있어 기본 파이프라인에서 제외되어 있다.
+
 ---
 
-## 실행 방법
+## 시작하기
 
-### 환경 설정
+### 1. 저장소 클론 (Git LFS 필요)
+
+이 저장소는 대용량 데이터 파일(`*.csv`, `*.parquet`, `*.pkl`)을 **Git LFS**로 관리한다.
+클론 전 반드시 Git LFS를 설치해야 한다.
+
 ```bash
-cd /home/ai/train_model/Training/Solar_Radiation_Prediction
+# Git LFS 설치 (최초 1회)
+# Ubuntu / Debian
+sudo apt install git-lfs
+
+# macOS
+brew install git-lfs
+
+# 설치 후 초기화
+git lfs install
+
+# 저장소 클론 (LFS 파일 포함)
+git clone <repository-url>
+cd Solar_Radiation_Prediction
+
+# 이미 클론한 경우 LFS 파일만 별도 다운로드
+git lfs pull
+```
+
+> LFS 없이 클론하면 `Train.csv`, `Test.csv`, `SampleSubmission.csv`,
+> `data/*.parquet`, `models4/*.pkl` 등이 포인터 파일로만 받아진다.
+> 이 경우 `git lfs pull`을 실행하면 실제 파일이 다운로드된다.
+
+### 2. 환경 설정
+
+```bash
 python3 -m venv env
-source env/bin/activate
+source env/bin/activate      # Windows: env\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 전체 파이프라인 실행
+### 3. 전체 파이프라인 실행
+
 ```bash
 python3 -u src4/run_all.py
 ```
 
-### 06단계부터만 실행 (전처리 완료 시)
+### 4. 06단계부터만 실행 (전처리 완료 시)
+
 ```bash
 python3 -u src4/06_train.py && \
 python3 -u src4/07_predict.py && \
@@ -139,15 +173,32 @@ python3 -u src4/09_submit.py
 
 ```
 Solar_Radiation_Prediction/
-├── src/          # LightGBM OpenCL (초기 버전, 피처 28개)
-├── src2/         # XGBoost CUDA (피처 49개)
-├── src3/         # src2 + station별 bias 보정
-├── src4/         # XGB+LGB+CAT 앙상블 (최고 성능, 피처 48개)
-├── src5/         # src3 + 시계열 피처 추가 (피처 62개)
-├── models4/      # src4 학습 모델 저장 위치
-├── data/         # 전처리된 parquet 파일 (공용)
+├── src4/                        # 최고 성능 파이프라인 (XGB+LGB+CAT 앙상블)
+│   ├── config.py                # 경로, 피처 목록, 모델 파라미터
+│   ├── model_utils.py           # 3종 앙상블 학습/예측 함수
+│   ├── 01_preprocess.py
+│   ├── 02_solar_features.py
+│   ├── 03_feature_engineering.py
+│   ├── 04_night_mask.py
+│   ├── 05_clearsky_index.py
+│   ├── 06_train.py              # 최종 모델 학습
+│   ├── 06_cv.py                 # CV bias 추정 (선택 실행)
+│   ├── 07_predict.py
+│   ├── 08_postprocess.py
+│   ├── 09_submit.py
+│   └── run_all.py               # 01~09 순차 실행
+├── models4/                     # 학습된 모델 (Git LFS)
+│   ├── models.pkl               # global + station 앙상블 모델
+│   └── cv_results.pkl
+├── data/                        # 전처리 중간 파일 (Git LFS)
+│   ├── train_final.parquet
+│   ├── test_final.parquet
+│   └── ...
+├── Train.csv                    # 원본 학습 데이터 (Git LFS)
+├── Test.csv                     # 원본 테스트 데이터 (Git LFS)
+├── SampleSubmission.csv         # 제출 형식 예시 (Git LFS)
 ├── requirements.txt
-├── CLAUDE.md     # 세션 간 컨텍스트 전달용
+├── CLAUDE.md                    # AI 세션 컨텍스트
 └── COMPETITION_INFO.md
 ```
 
@@ -165,4 +216,4 @@ scikit-learn      # lightgbm sklearn API
 tqdm              # 학습 진행 상태바
 ```
 
-**GPU 요구사항**: NVIDIA GPU (CUDA 지원), OpenCL 지원
+**GPU 요구사항**: NVIDIA GPU (CUDA 및 OpenCL 지원)
