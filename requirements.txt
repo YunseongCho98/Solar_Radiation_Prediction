@@ -1,0 +1,14 @@
+# Solar Radiation Prediction — 파이프라인 의존성
+# Python 3.12.3 에서 검증됨
+# 설치: pip install -r requirements.txt
+
+numpy==1.26.4
+pandas==3.0.3
+scipy==1.11.4
+pyarrow==24.0.0          # parquet 입출력 엔진
+lightgbm==4.6.0          # 모델 (GPU: device='gpu' OpenCL)
+scikit-learn>=1.3.0      # lightgbm sklearn API 의존성
+pvlib==0.15.1            # 태양 위치 / clearsky 복사량 계산
+tqdm==4.67.3             # 터미널 진행 상태바
+xgboost==3.2.0           # XGBoost CUDA GPU 학습 (src2~)
+catboost==1.2.10         # CatBoost GPU 학습 (src4)
